@@ -298,6 +298,9 @@ static void connect_user(int escape_char)
     /* set input to nonblocking/raw mode */
     set_keyboard(KBD_MODE_RAW);
 
+    /* state machine to find arrow sequences */
+    int arrow_sequence_state=0;
+
     /* state machine to find escape sequence */
     int escape_sequence_state=0;
 
@@ -320,9 +323,32 @@ static void connect_user(int escape_char)
             /* supposed to be a character ready */
             int chr=getchar();
 
+            /* store sent arrow key for verbose mode */
+            unsigned short arrow_key=0;
+
             /* we're out of characters */
             if (chr==EOF) {
                 break;
+            }
+
+            /* state machine to handle arrow keys */
+            switch (arrow_sequence_state) {
+                case 2: /* 2 = looking for A/B/C/D */
+                    arrow_sequence_state=(chr>='A'&&chr<='D')?3:0;
+                    if (!arrow_sequence_state) {
+                        sendchar(27);
+                        sendchar('[');
+                    }
+                    break;
+                case 1: /* 1 = looking for [ */
+                    arrow_sequence_state=(chr=='[')?2:0;
+                    if (!arrow_sequence_state) {
+                        sendchar(27);
+                    }
+                    break;
+                default: /* 0 = looking for escape key */
+                    arrow_sequence_state=(chr==27)?1:0;
+                    break;
             }
 
             /* state machine to handle escape code */
@@ -342,8 +368,29 @@ static void connect_user(int escape_char)
                 break;
             }
 
-            /* send typed character to uinput device */
-            sendchar(chr);
+            if (arrow_sequence_state==0) {
+                /* send typed character to uinput device */
+                sendchar(chr);
+            } else if (arrow_sequence_state==3) {
+                switch (chr) {
+                    case 'A':
+                        arrow_key=KEY_UP;
+                        break;
+                    case 'B':
+                        arrow_key=KEY_DOWN;
+                        break;
+                    case 'C':
+                        arrow_key=KEY_RIGHT;
+                        break;
+                    case 'D':
+                        arrow_key=KEY_LEFT;
+                        break;
+                }
+                send_event(EV_KEY, arrow_key, 1);
+                send_event(EV_KEY, arrow_key, 0);
+                send_report_event();
+                arrow_sequence_state = 0;
+            }
 
             /* verbose output? (very verbose!) */
             if (verbose_mode>2) {
