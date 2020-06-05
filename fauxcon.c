@@ -99,7 +99,7 @@ typedef struct {
 static const short keycode[]=
 {
     /*00 @ABCDEFG */ KEY_2|US|UC, KEY_A|UC, KEY_B|UC,          KEY_C|UC,         KEY_D|UC,         KEY_E|UC,          KEY_F|UC,     KEY_G|UC,
-    /*08 HIJKLMNO */ KEY_H|UC,    KEY_I|UC, KEY_J|UC,          KEY_K|UC,         KEY_L|UC,         KEY_M|UC,          KEY_N|UC,     KEY_O|UC,
+    /*08 HIJKLMNO */ KEY_BACKSPACE, KEY_TAB, KEY_J|UC,         KEY_K|UC,         KEY_L|UC,         KEY_ENTER,         KEY_N|UC,     KEY_O|UC,
     /*10 PQRSTUVW */ KEY_P|UC,    KEY_Q|UC, KEY_R|UC,          KEY_S|UC,         KEY_T|UC,         KEY_U|UC,          KEY_V|UC,     KEY_W|UC,
     /*18 XYZ..... */ KEY_X|UC,    KEY_Y|UC, KEY_Z|UC,          KEY_ESC,          0,                0,                 0,            0,
     /*20 .!.#$ &. */ KEY_SPACE,   KEY_1|US, KEY_APOSTROPHE|US, KEY_3|US,         KEY_4|US,         KEY_5|US,          KEY_7|US,     KEY_APOSTROPHE,
