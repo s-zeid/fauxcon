@@ -66,7 +66,7 @@ PREFIX = /usr/local
 .fauxcon: install
 install: fauxcon
 	mkdir -p $(DESTDIR)$(PREFIX)/bin
-	cp $< $(DESTDIR)$(PREFIX)/bin/fauxcon
+	install -p $< $(DESTDIR)$(PREFIX)/bin/fauxcon
 
 .fauxcon: uninstall
 uninstall:
