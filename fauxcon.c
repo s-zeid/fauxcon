@@ -40,7 +40,6 @@
 #include <fcntl.h>
 #include <sys/time.h>
 #include <linux/uinput.h>
-#include <error.h>
 #include <errno.h>
 #include <assert.h>
 #include <termios.h>
@@ -48,6 +47,7 @@
 #include <sys/ioctl.h>
 #include <sys/select.h>
 #include <getopt.h>
+#include <libgen.h>
 
 /* #include <linux/input.h>                               */
 /* not needed, since <linux/uinput.h> includes it already */
@@ -166,7 +166,8 @@ static void send_event(unsigned short type, unsigned short code, unsigned short 
     /* send the event */
     ssize_t result=write(ufile, &event, sizeof(event));
     if (result!=sizeof(event)) {
-        error(1, errno, "Error during event write");
+        perror("Error during event write");
+        exit(1);
     }
 }
 
@@ -181,7 +182,8 @@ static void send_report_event(void)
 
     ssize_t result=write(ufile, &event, sizeof(event));
     if (result!=sizeof(event)) {
-        error(1, errno, "Error during event sync");
+        perror("Error during event sync write");
+        exit(1);
     }
 }
 
@@ -240,7 +242,8 @@ static void create_uinput(void)
     /* Attempt to open uinput to create new device */
     ufile = open("/dev/uinput", O_WRONLY | O_NONBLOCK);
     if (ufile<0) {
-        error(1, errno, "Could not open uinput device");
+        perror("Could not open uinput device");
+        exit(1);
     }
 
     /* structure with name and other info */
@@ -270,7 +273,9 @@ static void create_uinput(void)
     ssize_t res=write(ufile, &uinp, sizeof(uinp));
     if (res!=sizeof(uinp)) {
         close(ufile);
-        error(2, errno, "Write error: %d (actual) != %d (expected)", (signed int)res, (signed int)sizeof(uinp));
+        fprintf(stderr, "Write error: %d (actual) != %d (expected)", (signed int)res, (signed int)sizeof(uinp));
+        perror("");
+        exit(2);
         /* no return */
     }
 
@@ -278,7 +283,9 @@ static void create_uinput(void)
     int retcode = ioctl(ufile, UI_DEV_CREATE);
     if (retcode) {
         close(ufile);
-        error(2, errno, "Ioctl error: %d", retcode);
+        fprintf(stderr, "Ioctl error: %d", retcode);
+        perror("");
+        exit(2);
         /* no return */
     }
 }
@@ -726,7 +733,8 @@ int main(int argc, char* argv[])
             case 'r': /* delay for RETURN's */
             case 'c': /* delay for every character */
                 if ((optarg[0]=='d')&&(optarg[1]=='e')) {
-                    error(EXIT_FAILURE,0,"Single dash on long --%cdelay option\n",opt);
+                    fprintf(stderr,"error: Single dash on long --%cdelay option\n",opt);
+                    exit(EXIT_FAILURE);
                     /* no return */
                 }
                 errno=0;
@@ -735,7 +743,13 @@ int main(int argc, char* argv[])
                 if ((errno)||(delay<0)||(delay>MAX_DELAY)) {
                     /* do we want to fail early? or do something unexpected
                      * by the user? Let's fail for now */
-                    error(EXIT_FAILURE,errno,"Delay (-%c|--%cdelay) out of bounds (0->%dms) at %d\n",opt,opt,MAX_DELAY,delay);
+                    fprintf(stderr,"error: Delay (-%c|--%cdelay) out of bounds (0->%dms) at %d",opt,opt,MAX_DELAY,delay);
+                    if (errno) {
+                        perror("");
+                    } else {
+                        fprintf(stderr,"\n");
+                    }
+                    exit(EXIT_FAILURE);
                     /* no return */
                 }
                 if (opt=='r') {
@@ -747,7 +761,9 @@ int main(int argc, char* argv[])
             case 'f': /* send file */
                 /* verify file exists and is readable */
                 if (access(optarg,R_OK)) {
-                    error(EXIT_FAILURE,errno,"Unable to read file: '%s'",optarg);
+                    fprintf(stderr,"error: Unable to read file: '%s'\n",optarg);
+                    perror("");
+                    exit(EXIT_FAILURE);
                     /* no return */
                 }
                 /* note that we're sending something */
